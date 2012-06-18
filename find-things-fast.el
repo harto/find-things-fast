@@ -178,22 +178,11 @@ otherwise defaulting to `find-tag-default'."
         (or default (error "There is no default symbol to grep for."))
       spec))))
 
-(defun ftf-grepsource (cmd-args)
-  "Greps the current project, leveraging local repository data
-for speed and falling back on a big \"find | xargs grep\"
-command if we aren't.
-
-The project's scope is defined first as a directory containing
-either a `.dir-locals.el' file or an `.emacs-project' file OR the
-root of the current git repository OR a project root defined by
-the optional `project-root.el' package OR the default directory
-if none of the above is found."
-  (interactive (ftf-interactive-default-read "Grep project for string: "))
+(defun ftf-grepsource-actual (cmd-args)
   ;; When we're in a git repository, use git grep so we don't have to
   ;; find-files.
   (let ((quoted (replace-regexp-in-string "\"" "\\\\\"" cmd-args))
         (git-toplevel (ftf-get-top-git-dir default-directory))
-        (default-directory (ftf-project-directory))
         (grep-use-null-device nil))
     (cond (git-toplevel ;; We can accelerate our grep using the git data.
            (grep (concat "git --no-pager grep --no-color -n -e \""
@@ -205,6 +194,20 @@ if none of the above is found."
              (grep (concat (ftf-get-find-command)
                            " | xargs grep -nH -e \"" quoted "\""))))))
 
+(defun ftf-grepsource (cmd-args)
+  "Greps the current project, leveraging local repository data
+for speed and falling back on a big \"find | xargs grep\"
+command if we aren't.
+
+The project's scope is defined first as a directory containing
+either a `.dir-locals.el' file or an `.emacs-project' file OR the
+root of the current git repository OR a project root defined by
+the optional `project-root.el' package OR the default directory
+if none of the above is found."
+
+  (interactive (ftf-interactive-default-read "Grep project for string: "))
+  (with-ftf-project-root (ftf-grepsource-actual cmd-args)))
+
 (defun ftf-project-files-string ()
   "Returns a string with the raw output of ."
   (let ((git-toplevel (ftf-get-top-git-dir default-directory)))
@@ -213,14 +216,12 @@ if none of the above is found."
             (concat "git ls-files -- \""
                     (mapconcat 'identity ftf-filetypes "\" \"")
                     "\"")))
-           (t
-            (let ((default-directory (ftf-project-directory)))
-              (shell-command-to-string (ftf-get-find-command)))))))
+          (t
+           (shell-command-to-string (ftf-get-find-command))))))
 
 (defun ftf-project-files-hash ()
   "Returns a hashtable filled with file names as the key and "
-  (let ((default-directory (ftf-project-directory))
-        (table (make-hash-table :test 'equal)))
+  (let ((table (make-hash-table :test 'equal)))
     (mapcar (lambda (file)
               (let* ((file-name (file-name-nondirectory file))
                      (full-path (expand-file-name file))
@@ -256,15 +257,7 @@ the file name."
 	  (concat (car file-cons) ": "
 		  (cadr (reverse (split-string (cdr file-cons) "/"))))))
 
-(defun ftf-find-file ()
-  "Prompt with a completing list of all files in the project to find one.
-
-The project's scope is defined first as a directory containing
-either a `.dir-locals.el' file or an `.emacs-project' file OR the
-root of the current git repository OR a project root defined by
-the optional `project-root.el' package OR the default directory
-if none of the above is found."
-  (interactive)
+(defun ftf-find-file-actual ()
   (let* ((project-files (ftf-project-files-alist))
 	 (filename (if (functionp 'ido-completing-read)
                    (ido-completing-read "Find file in project: "
@@ -276,12 +269,29 @@ if none of the above is found."
         (find-file file)
       (error "No such file."))))
 
+(defun ftf-find-file ()
+  "Prompt with a completing list of all files in the project to find one.
+
+The project's scope is defined first as a directory containing
+either a `.dir-locals.el' file or an `.emacs-project' file OR the
+root of the current git repository OR a project root defined by
+the optional `project-root.el' package OR the default directory
+if none of the above is found."
+  (interactive)
+  (with-ftf-project-root (ftf-find-file-actual)))
+
 (defmacro with-ftf-project-root (&rest body)
   "Run BODY with `default-directory' set to what the
 find-things-fast project root. A utility macro for any of your
 custom functions which might want to run "
   `(let ((default-directory (ftf-project-directory)))
           ,@body))
+
+(defmacro with-ftf-root-parent (&rest body)
+  "Run BODY with `default-directory' set to the parent of 
+find-things-fast project root."
+  `(let ((default-directory (file-name-directory (directory-file-name (ftf-project-directory)))))
+     ,@body))
 
 (defun ftf-compile ()
   "Run the `compile' function from the project root."
@@ -292,6 +302,10 @@ custom functions which might want to run "
   "Run the `gdb' function from the project root."
   (interactive)
   (with-ftf-project-root (call-interactively 'gdb)))
+
+(defun ftf-find-file-in-parent ()
+  (interactive)
+  (with-ftf-root-parent (ftf-find-file-actual)))
 
 (provide 'find-things-fast)
 ;;; find-things-fast.el ends here
