@@ -101,12 +101,23 @@
   "A list of filetype patterns that grepsource will use. Obviously biased for
 chrome development.")
 
+(defvar ftf-ignored-filetypes
+  '("*.o" "*.pyc" "*.hi" "*.so")
+  "A list of filetype patterns that will be ignored.")
+
 (defun ftf-add-filetypes (types)
   "Makes `ftf-filetypes' local to this buffer and adds the
 elements of list types to the list"
   (make-local-variable 'ftf-filetypes)
   (dolist (type types)
     (add-to-list 'ftf-filetypes type)))
+
+(defun ftf-add-ignored-filetypes (types)
+  "Makes `ftf-ignored-filetypes' local to this buffer and 
+adds the elements of list types to the list"
+  (make-local-variable 'ftf-ignored-filetypes)
+  (dolist (type types)
+    (add-to-list 'ftf-ignored-filetypes type)))
 
 (defun ftf-find-locals-directory ()
   "Returns the directory that contains either `.dir-locals.el' or
@@ -139,9 +150,15 @@ elements of list types to the list"
 
 (defun ftf-get-find-command ()
   "Creates the raw, shared find command from `ftf-filetypes'."
-  (concat "find . -path '*/.svn' -prune -o -name \""
-          (mapconcat 'identity ftf-filetypes "\" -or -name \"")
-          "\""))
+  (defun wrap-string (str operation)
+    (concat " -or -name \"" str "\" -" operation))
+  (defun wrap-prune (str) 
+    (wrap-string str "prune"))
+  (defun wrap-print (str)
+    (wrap-string str "print"))
+  (concat "find . -path '*/.svn' -prune"
+          (mapconcat 'wrap-prune ftf-ignored-filetypes " ")
+          (mapconcat 'wrap-print ftf-filetypes " ")))
 
 ;; Adapted from git.el 's git-get-top-dir
 (defun ftf-get-top-git-dir (dir)
