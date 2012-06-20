@@ -155,8 +155,8 @@ adds the elements of list types to the list"
   (defun wrap-prune (str) 
     (wrap-string str "prune"))
   (defun wrap-print (str)
-    (wrap-string str "print"))
-  (concat "find . -path '*/.svn' -prune"
+    (wrap-string str "print0"))
+  (concat "find -L . -path '*/.svn' -prune"
           (mapconcat 'wrap-prune ftf-ignored-filetypes " ")
           (mapconcat 'wrap-print ftf-filetypes " ")))
 
@@ -209,7 +209,7 @@ otherwise defaulting to `find-tag-default'."
                          "\"")))
           (t            ;; Fallback on find|xargs
              (grep (concat (ftf-get-find-command)
-                           " | xargs grep -nH -e \"" quoted "\""))))))
+                           " | xargs -0 grep -i -nH -e \"" quoted "\""))))))
 
 (defun ftf-grepsource (cmd-args)
   "Greps the current project, leveraging local repository data
@@ -244,7 +244,7 @@ if none of the above is found."
                      (full-path (expand-file-name file))
                      (pathlist (cons full-path (gethash file-name table nil))))
                 (puthash file-name pathlist table)))
-            (split-string (ftf-project-files-string)))
+            (split-string (ftf-project-files-string) "\000" t))
     table))
 
 (defun ftf-project-files-alist ()
