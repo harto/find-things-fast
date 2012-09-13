@@ -155,7 +155,7 @@ adds the elements of list types to the list"
   (defun wrap-prune (str) 
     (wrap-string str "prune"))
   (defun wrap-print (str)
-    (wrap-string str "print0"))
+    (wrap-string str "type f -print0"))
   (concat "find -L . -path '*/.svn' -prune"
           (mapconcat 'wrap-prune ftf-ignored-filetypes " ")
           (mapconcat 'wrap-print ftf-filetypes " ")))
