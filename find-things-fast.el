@@ -95,14 +95,11 @@
 ;;; Code:
 
 (defvar ftf-filetypes
-  '("*.h" "*.hpp" "*.cpp" "*.c" "*.cc" "*.cpp" "*.inl" "*.grd" "*.idl" "*.m"
-    "*.mm" "*.py" "*.sh" "*.cfg" "*SConscript" "SConscript*" "*.scons"
-    "*.vcproj" "*.vsprops" "*.make" "*.gyp" "*.gypi")
-  "A list of filetype patterns that grepsource will use. Obviously biased for
-chrome development.")
+  '("*")
+  "A list of filetype patterns that grepsource will use.")
 
 (defvar ftf-ignored-filetypes
-  '("*.o" "*.pyc" "*.hi" "*.so")
+  '("*.o" "*.pyc" "*.hi" "*.so" "*~" ".bzr*" ".git*" ".#*")
   "A list of filetype patterns that will be ignored.")
 
 (defun ftf-add-filetypes (types)
