@@ -102,6 +102,10 @@
   '("*.o" "*.pyc" "*.hi" "*.so" "*~" ".bzr*" ".git*" ".#*")
   "A list of filetype patterns that will be ignored.")
 
+(defvar ftf-grep-command
+  "grep -nH -e"
+  "The grep command.")
+
 (defun ftf-add-filetypes (types)
   "Makes `ftf-filetypes' local to this buffer and adds the
 elements of list types to the list"
@@ -196,17 +200,11 @@ otherwise defaulting to `find-tag-default'."
   ;; When we're in a git repository, use git grep so we don't have to
   ;; find-files.
   (let ((quoted (replace-regexp-in-string "\"" "\\\\\"" cmd-args))
-        (git-toplevel (ftf-get-top-git-dir default-directory))
         (grep-use-null-device nil))
-    (cond (git-toplevel ;; We can accelerate our grep using the git data.
-           (grep (concat "git --no-pager grep --no-color -n -e \""
-                         quoted
-                         "\" -- \""
-                         (mapconcat 'identity ftf-filetypes "\" \"")
-                         "\"")))
-          (t            ;; Fallback on find|xargs
-             (grep (concat (ftf-get-find-command)
-                           " | xargs -0 grep -i -nH -e \"" quoted "\""))))))
+    (grep (concat (ftf-get-find-command)
+                  " | xargs -0 "
+                  ftf-grep-command
+                  " \"" quoted "\""))))
 
 (defun ftf-grepsource (cmd-args)
   "Greps the current project, leveraging local repository data
