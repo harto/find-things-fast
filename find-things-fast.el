@@ -197,14 +197,18 @@ otherwise defaulting to `find-tag-default'."
       spec))))
 
 (defun ftf-grepsource-actual (cmd-args)
-  ;; When we're in a git repository, use git grep so we don't have to
-  ;; find-files.
-  (let ((quoted (replace-regexp-in-string "\"" "\\\\\"" cmd-args))
+  "When we're in a git repository, use git grep so we don't have to
+  find-files."
+  (let ((git-toplevel (ftf-get-top-git-dir default-directory))
+        (quoted (replace-regexp-in-string "\"" "\\\\\"" cmd-args))
         (grep-use-null-device nil))
-    (grep (concat (ftf-get-find-command)
-                  " | xargs -0 "
-                  ftf-grep-command
-                  " \"" quoted "\""))))
+    (cond (git-toplevel
+           (grep (concat "PAGER=cat git grep -n \"" quoted "\"")))
+          (t
+           (grep (concat (ftf-get-find-command)
+                         " | xargs -0 "
+                         ftf-grep-command
+                         " \"" quoted "\""))))))
 
 (defun ftf-grepsource (cmd-args)
   "Greps the current project, leveraging local repository data
