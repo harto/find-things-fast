@@ -4,7 +4,7 @@
 ;; Copyright (C) 2006, 2007, 2008 Phil Hagelberg and Doug Alcorn
 
 ;; Author: Elliot Glaysher and Phil Hagelberg and Doug Alcorn
-;; URL: 
+;; URL:
 ;; Version: 1.0
 ;; Created: 2010-02-19
 ;; Keywords: project, convenience
@@ -114,7 +114,7 @@ elements of list types to the list"
     (add-to-list 'ftf-filetypes type)))
 
 (defun ftf-add-ignored-filetypes (types)
-  "Makes `ftf-ignored-filetypes' local to this buffer and 
+  "Makes `ftf-ignored-filetypes' local to this buffer and
 adds the elements of list types to the list"
   (make-local-variable 'ftf-ignored-filetypes)
   (dolist (type types)
@@ -152,8 +152,8 @@ adds the elements of list types to the list"
 (defun ftf-get-find-command ()
   "Creates the raw, shared find command from `ftf-filetypes'."
   (defun wrap-string (str operation)
-    (concat " -or -name \"" str "\" -" operation))
-  (defun wrap-prune (str) 
+    (concat " -or -name '" str "' -" operation))
+  (defun wrap-prune (str)
     (wrap-string str "prune"))
   (defun wrap-print (str)
     (wrap-string str "type f -print0"))
@@ -220,14 +220,16 @@ if none of the above is found."
   (interactive (ftf-interactive-default-read "Grep project for string: "))
   (with-ftf-project-root (ftf-grepsource-actual cmd-args)))
 
+(defun ftf-get-git-find-command ()
+  (concat "git ls-files -- '"
+          (mapconcat 'identity ftf-filetypes "' '")
+          "'"))
+
 (defun ftf-project-files-string ()
   "Returns a string with the raw output of ."
   (let ((git-toplevel (ftf-get-top-git-dir default-directory)))
     (cond (git-toplevel
-           (shell-command-to-string
-            (concat "git ls-files -- \""
-                    (mapconcat 'identity ftf-filetypes "\" \"")
-                    "\"")))
+           (shell-command-to-string (ftf-get-git-find-command)))
           (t
            (shell-command-to-string (ftf-get-find-command))))))
 
@@ -239,7 +241,7 @@ if none of the above is found."
                      (full-path (expand-file-name file))
                      (pathlist (cons full-path (gethash file-name table nil))))
                 (puthash file-name pathlist table)))
-            (split-string (ftf-project-files-string) "\000" t))
+            (split-string (ftf-project-files-string) split-string-default-separators t))
     table))
 
 (defun ftf-project-files-alist ()
@@ -300,7 +302,7 @@ custom functions which might want to run "
           ,@body))
 
 (defmacro with-ftf-root-parent (&rest body)
-  "Run BODY with `default-directory' set to the parent of 
+  "Run BODY with `default-directory' set to the parent of
 find-things-fast project root."
   `(let ((default-directory (file-name-directory (directory-file-name (ftf-project-directory)))))
      ,@body))
