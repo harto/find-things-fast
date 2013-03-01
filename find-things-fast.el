@@ -4,7 +4,7 @@
 ;; Copyright (C) 2006, 2007, 2008 Phil Hagelberg and Doug Alcorn
 
 ;; Author: Elliot Glaysher and Phil Hagelberg and Doug Alcorn
-;; URL: 
+;; URL:
 ;; Version: 1.0
 ;; Created: 2010-02-19
 ;; Keywords: project, convenience
@@ -114,7 +114,7 @@ elements of list types to the list"
     (add-to-list 'ftf-filetypes type)))
 
 (defun ftf-add-ignored-filetypes (types)
-  "Makes `ftf-ignored-filetypes' local to this buffer and 
+  "Makes `ftf-ignored-filetypes' local to this buffer and
 adds the elements of list types to the list"
   (make-local-variable 'ftf-ignored-filetypes)
   (dolist (type types)
@@ -152,8 +152,8 @@ adds the elements of list types to the list"
 (defun ftf-get-find-command ()
   "Creates the raw, shared find command from `ftf-filetypes'."
   (defun wrap-string (str operation)
-    (concat " -or -name \"" str "\" -" operation))
-  (defun wrap-prune (str) 
+    (concat " -or -name '" str "' -" operation))
+  (defun wrap-prune (str)
     (wrap-string str "prune"))
   (defun wrap-print (str)
     (wrap-string str "type f -print0"))
@@ -197,14 +197,18 @@ otherwise defaulting to `find-tag-default'."
       spec))))
 
 (defun ftf-grepsource-actual (cmd-args)
-  ;; When we're in a git repository, use git grep so we don't have to
-  ;; find-files.
-  (let ((quoted (replace-regexp-in-string "\"" "\\\\\"" cmd-args))
+  "When we're in a git repository, use git grep so we don't have to
+  find-files."
+  (let ((git-toplevel (ftf-get-top-git-dir default-directory))
+        (quoted (replace-regexp-in-string "\"" "\\\\\"" cmd-args))
         (grep-use-null-device nil))
-    (grep (concat (ftf-get-find-command)
-                  " | xargs -0 "
-                  ftf-grep-command
-                  " \"" quoted "\""))))
+    (cond (git-toplevel
+           (grep (concat "PAGER=cat git grep -n \"" quoted "\"")))
+          (t
+           (grep (concat (ftf-get-find-command)
+                         " | xargs -0 "
+                         ftf-grep-command
+                         " \"" quoted "\""))))))
 
 (defun ftf-grepsource (cmd-args)
   "Greps the current project, leveraging local repository data
@@ -220,14 +224,17 @@ if none of the above is found."
   (interactive (ftf-interactive-default-read "Grep project for string: "))
   (with-ftf-project-root (ftf-grepsource-actual cmd-args)))
 
+(defun ftf-get-git-find-command ()
+  (concat "git ls-files -- '"
+          (mapconcat 'identity ftf-filetypes "' '")
+          "'"))
+
 (defun ftf-project-files-string ()
   "Returns a string with the raw output of ."
   (let ((git-toplevel (ftf-get-top-git-dir default-directory)))
     (cond (git-toplevel
-           (shell-command-to-string
-            (concat "git ls-files -- \""
-                    (mapconcat 'identity ftf-filetypes "\" \"")
-                    "\"")))
+           (replace-regexp-in-string "\n" "\000"
+             (shell-command-to-string (ftf-get-git-find-command))))
           (t
            (shell-command-to-string (ftf-get-find-command))))))
 
@@ -235,7 +242,7 @@ if none of the above is found."
   "Returns a hashtable filled with file names as the key and "
   (let ((table (make-hash-table :test 'equal)))
     (mapcar (lambda (file)
-              (let* ((file-name (file-name-nondirectory file))
+              (let* ((file-name file)
                      (full-path (expand-file-name file))
                      (pathlist (cons full-path (gethash file-name table nil))))
                 (puthash file-name pathlist table)))
@@ -265,9 +272,7 @@ directory they are found in so that they are unique."
 (defun ftf-uniqueify (file-cons)
   "Set the car of the argument to include the directory name plus
 the file name."
-  (setcar file-cons
-	  (concat (car file-cons) ": "
-		  (cadr (reverse (split-string (cdr file-cons) "/"))))))
+  (setcar file-cons (car file-cons)))
 
 (defun ftf-find-file-actual ()
   (let* ((project-files (ftf-project-files-alist))
@@ -300,7 +305,7 @@ custom functions which might want to run "
           ,@body))
 
 (defmacro with-ftf-root-parent (&rest body)
-  "Run BODY with `default-directory' set to the parent of 
+  "Run BODY with `default-directory' set to the parent of
 find-things-fast project root."
   `(let ((default-directory (file-name-directory (directory-file-name (ftf-project-directory)))))
      ,@body))
