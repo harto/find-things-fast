@@ -267,9 +267,7 @@ directory they are found in so that they are unique."
 (defun ftf-uniqueify (file-cons)
   "Set the car of the argument to include the directory name plus
 the file name."
-  (setcar file-cons
-	  (concat (car file-cons) ": "
-		  (cadr (reverse (split-string (cdr file-cons) "/"))))))
+  (setcar file-cons (cdr file-cons)))
 
 (defun ftf-find-file-actual ()
   (let* ((project-files (ftf-project-files-alist))
