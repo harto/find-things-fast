@@ -156,7 +156,7 @@ adds the elements of list types to the list"
   (defun wrap-prune (str)
     (wrap-string str "prune"))
   (defun wrap-print (str)
-    (wrap-string str "type f -print"))
+    (wrap-string str "type f -print0"))
   (concat "find -L . -path '*/.svn' -prune"
           (mapconcat 'wrap-prune ftf-ignored-filetypes " ")
           (mapconcat 'wrap-print ftf-filetypes " ")))
@@ -229,7 +229,8 @@ if none of the above is found."
   "Returns a string with the raw output of ."
   (let ((git-toplevel (ftf-get-top-git-dir default-directory)))
     (cond (git-toplevel
-           (shell-command-to-string (ftf-get-git-find-command)))
+           (replace-regexp-in-string "\n" "\000"
+             (shell-command-to-string (ftf-get-git-find-command))))
           (t
            (shell-command-to-string (ftf-get-find-command))))))
 
@@ -241,7 +242,7 @@ if none of the above is found."
                      (full-path (expand-file-name file))
                      (pathlist (cons full-path (gethash file-name table nil))))
                 (puthash file-name pathlist table)))
-            (split-string (ftf-project-files-string) "\n" t))
+            (split-string (ftf-project-files-string) "\000" t))
     table))
 
 (defun ftf-project-files-alist ()
