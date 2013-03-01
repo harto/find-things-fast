@@ -156,7 +156,7 @@ adds the elements of list types to the list"
   (defun wrap-prune (str)
     (wrap-string str "prune"))
   (defun wrap-print (str)
-    (wrap-string str "type f -print0"))
+    (wrap-string str "type f -print"))
   (concat "find -L . -path '*/.svn' -prune"
           (mapconcat 'wrap-prune ftf-ignored-filetypes " ")
           (mapconcat 'wrap-print ftf-filetypes " ")))
@@ -241,7 +241,7 @@ if none of the above is found."
                      (full-path (expand-file-name file))
                      (pathlist (cons full-path (gethash file-name table nil))))
                 (puthash file-name pathlist table)))
-            (split-string (ftf-project-files-string) split-string-default-separators t))
+            (split-string (ftf-project-files-string) "\n" t))
     table))
 
 (defun ftf-project-files-alist ()
