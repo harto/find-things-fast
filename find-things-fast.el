@@ -242,7 +242,7 @@ if none of the above is found."
   "Returns a hashtable filled with file names as the key and "
   (let ((table (make-hash-table :test 'equal)))
     (mapcar (lambda (file)
-              (let* ((file-name (file-name-nondirectory file))
+              (let* ((file-name file)
                      (full-path (expand-file-name file))
                      (pathlist (cons full-path (gethash file-name table nil))))
                 (puthash file-name pathlist table)))
@@ -272,7 +272,7 @@ directory they are found in so that they are unique."
 (defun ftf-uniqueify (file-cons)
   "Set the car of the argument to include the directory name plus
 the file name."
-  (setcar file-cons (cdr file-cons)))
+  (setcar file-cons (car file-cons)))
 
 (defun ftf-find-file-actual ()
   (let* ((project-files (ftf-project-files-alist))
