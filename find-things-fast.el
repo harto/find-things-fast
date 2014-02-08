@@ -106,6 +106,10 @@
   "grep -nH -e"
   "The grep command.")
 
+(defvar ftf-git-grep-options
+  ""
+  "Additional option flags for the git grep command.")
+
 (defun ftf-add-filetypes (types)
   "Makes `ftf-filetypes' local to this buffer and adds the
 elements of list types to the list"
@@ -203,7 +207,9 @@ otherwise defaulting to `find-tag-default'."
         (quoted (replace-regexp-in-string "\"" "\\\\\"" cmd-args))
         (grep-use-null-device nil))
     (cond (git-toplevel
-           (grep (concat "PAGER=cat git grep -n \"" quoted "\"")))
+           (grep (concat "PAGER=cat git grep -n "
+                         ftf-git-grep-options
+                         " \"" quoted "\"")))
           (t
            (grep (concat (ftf-get-find-command)
                          " | xargs -0 "
